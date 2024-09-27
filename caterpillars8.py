@@ -1,8 +1,6 @@
 #This is a program which given int 0<=c<=9 and int 0<=p<=3315
 #checks whether it is possible to shorten the spine
-#of the caterpillar c on point set p using slides
-#c refers to a caterpillar on 8 vertices with spine on at least 4 vertices
-#p refers to an order type on 8 points
+#of the caterpillar c on point set p using slides  
 
 import numpy as np
 import networkx as nx
@@ -14,7 +12,6 @@ from io import BytesIO
 import shapely
 from datetime import datetime
 import argparse
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("caterpillar",type=int,help="no 0-9")
@@ -66,47 +63,7 @@ df.head()
 data = read_order_types(file_content_array)
 data = list(data)
 data = [tuple(x) for x in data]
-
-#generating all caterpillars
-
-def is_sym_or_forward(seq, d):
-  if seq == seq[::-1]: return True
-  for i in range(d-2):
-    if seq[i] != seq[d-i-2]:
-      if seq[i] > seq[d-i-2]: return True
-      return False
-
-def find_s(seq, d):
-  j = d-3
-  while seq[j] == 0: j-=1
-  return j
-
-def new_seq(seq):
-  l = len(seq)
-  if l == 1: return [int(seq[0]+2)]
-  if l == 2: return [int(seq[0]+1), int(seq[1]+1)]
-  return [int(seq[0]+1)] + [int(seq[i]) for i in range(1,l-1)] + [int(seq[l-1]+1)]
-
-def generate_caterpillars(n,d=None):
-  if d is None:
-    cs = []
-    for d in range(2,n):
-      cs += generate_caterpillars(n,d)
-    return cs
-  c = [n-d-1] + list(np.zeros(d-2))
-  cs = [new_seq(c)]
-  while sum(c[:d-2]) > 0:
-    s = find_s(c, d)
-    if s == d-3:
-      c[d-3] -= 1
-      c[d-2] += 1
-    else:
-      c[s] -= 1
-      c[s+1] = 1 + c[d-2]
-      c[d-2] = 0
-    if is_sym_or_forward(c,d):
-      cs.append(new_seq(c))
-  return cs
+print("got pointsets")
 
 # functions we need
 
@@ -140,9 +97,10 @@ def check_empty_triangles(G):
   pos = nx.get_node_attributes(G, 'pos')
   vertices = set(range(n))
   empty_triangs = []
+  G_edges = [tuple(sorted(e)) for e in G.edges]
   for triang in itertools.combinations(range(n),3):
     a,b,c=triang
-    if not len(set(((a,b),(a,c),(b,c))).intersection(set(G.edges))) == 2: continue
+    if not len(set(((a,b),(a,c),(b,c))).intersection(set(G_edges))) == 2: continue
     t = shapely.convex_hull(shapely.MultiPoint([pos[a],pos[b],pos[c]]))
     rest = list(vertices.difference(triang))
     empty = True
@@ -165,74 +123,71 @@ def is_caterpillar(G):
   return True
 
 
-caterpillars = generate_caterpillars(8)[10:]
+caterpillars = [[3, 0, 0, 1], [2, 1, 0, 1], [2, 0, 1, 1], [2, 0, 0, 2], [1, 2, 0, 1], [1, 1, 1, 1], [2, 0, 0, 0, 1], [1, 1, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 0, 0, 1]]
 cp = caterpillars[caterpillar]
+sp = len(cp)
 pts = data[8*pointset:8*pointset+8]
 pillar = seq_to_caterpillar(cp)
 
 print("caterpillar and point set made")
 
-# global m 
-# m = 0
-global pos
 global connected
+global pos
 
-def dfs(G, spine_len, used_slides):
-  # global m
-  global pos
+#dfs function
+def dfs(G):
   global connected
-  if spine_len < len(cp):
-    return
-  triangles = [t for t in check_empty_triangles(G) if t not in used_slides]
-  no_flips = False
-  for t in triangles:
-    a,b,c = t
-    pairs = set(((a,b),(b,c),(a,c)))
-    (e,f) = pairs.intersection(set(G.edges))
-    (g,) = pairs.difference(set(G.edges))
+  global pos
+  visited = [] 
+  stack = []
+  stack.append(list(G.edges)) 
+ 
+  while (len(stack)): 
+    edges = stack[-1] 
+    stack.pop()
     H = nx.empty_graph()
-    H.add_nodes_from(G)
-    H.add_edges_from(G.edges)
-    H.remove_edge(e[0],e[1])
-    H.add_edge(g[0],g[1])
+    H.add_edges_from(edges)
     nx.set_node_attributes(H, pos, "pos")
-    I = nx.empty_graph()
-    I.add_nodes_from(G)
-    I.add_edges_from(G.edges)
-    I.remove_edge(f[0],f[1])
-    I.add_edge(g[0],g[1])
-    nx.set_node_attributes(I, pos, "pos")
-    used_slides.append(t)
-    if check_planar(H) and is_caterpillar(H):
-      H_spine = len([p[1] for p in H.degree if p[1]>1])
-      no_flips = False
-      dfs(H, H_spine, used_slides)
-    if check_planar(I) and is_caterpillar(I): 
-      I_spine = len([p[1] for p in I.degree if p[1]>1])
-      no_flips = False
-      dfs(I, I_spine, used_slides)
-  if no_flips:
-    connected = False
-    plt.title("original")
-    nx.draw(pillar, nx.get_node_attributes(pillar, 'pos'), with_labels=False, node_size=15)
-    plt.savefig(f'original{caterpillar}.png')
-    plt.close()
-    plt.title("got stuck")
-    nx.draw(G, nx.get_node_attributes(G, 'pos'), with_labels=False, node_size=15)
-    plt.savefig(f'stuck{caterpillar}{pointset}.png')
-    plt.close()
-    return
-
+    if is_caterpillar(H):
+      if len([p[1] for p in H.degree if p[1]>1])<sp:
+        return
+      if not edges in visited: 
+        visited.append(edges)
+        for t in check_empty_triangles(H): 
+          a,b,c = t
+          pairs = set(((a,b),(b,c),(a,c)))
+          (e,f) = pairs.intersection(set(edges))
+          (g,) = pairs.difference(set(edges))
+          one = [edge for edge in edges if not edge == e] + [g]
+          one.sort()
+          two = [edge for edge in edges if not edge == f] + [g]
+          two.sort()
+          if not one in visited: 
+            stack.append(one)
+          if not two in visited: 
+            stack.append(two)
+  connected = False
+  plt.title("original")
+  nx.draw(pillar, nx.get_node_attributes(pillar, 'pos'), with_labels=True, node_size=15)
+  plt.savefig(f'original{caterpillar}.png')
+  plt.close()
+  plt.title("got stuck")
+  nx.draw(H, nx.get_node_attributes(H, 'pos'), with_labels=True, node_size=15)
+  plt.savefig(f'stuck{caterpillar}{pointset}.png')
+  plt.close()
+  return
 
 for P in itertools.permutations(pts):
   pos = {}
   connected = True
   for j in range(n): pos[j] = P[j]
   nx.set_node_attributes(pillar, pos, "pos")
-  used_slides = []
+  visited = [list(pillar.edges)]
   spine_len = len(cp)
-  dfs(pillar, spine_len, used_slides)
-  if not connected: print("i got stuck here")
+  if check_planar(pillar): dfs(pillar)
+  if not connected:
+    print("i got stuck here")
+    break
 
 end_time = datetime.now()
 print("done ")
