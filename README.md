@@ -1,3 +1,8 @@
+# Update 28.09.2024
+We have found an isolated caterpillar on 8 points.
+
+![original8](https://github.com/user-attachments/assets/3fcb3245-9437-4890-ae36-1337fc310513)
+
 # Caterpillar Slides
 
 This code is related to the paper *Reconfigurations of Plane Caterpillars* and Paths by T. Antić, G. Gamboa Quintero and J. Glišić.
