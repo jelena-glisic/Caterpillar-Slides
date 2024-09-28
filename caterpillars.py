@@ -1,6 +1,9 @@
-#This is a program which given int 0<=c<=9 and int 0<=p<=3315
+#This is a program which given ints n, caterpillar and pointset
 #checks whether it is possible to shorten the spine
 #of the caterpillar c on point set p using slides  
+#n should be 7 or 8
+#if n is 7, caterpillar is between 0 and 2, pointset is between 0 and 134
+#if n is 8, caterpillar is between 0 and 9, pointset is between 0 and 3314
 
 import numpy as np
 import networkx as nx
@@ -14,8 +17,9 @@ from datetime import datetime
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("caterpillar",type=int,help="no 0-9")
-parser.add_argument("pointset",type=int,help="no 0-3314")
+parser.add_argument("n",type=int,help="point set size")
+parser.add_argument("caterpillar",type=int,help="which caterpillar to look at")
+parser.add_argument("pointset",type=int,help="which point set to look at")
 args = parser.parse_args()
 
 print0 = print
@@ -27,7 +31,7 @@ def print(*X):
 start_time = datetime.now()
 print("args",args)
 
-n = 8
+n = args.n
 caterpillar = args.caterpillar
 pointset = args.pointset
 
@@ -45,7 +49,8 @@ def read_order_types(file_content):
     return points
 
 
-file_url = "http://www.ist.tugraz.at/staff/aichholzer/research/rp/triangulations/ordertypes/data/otypes08.b08"
+if n==8: file_url = "http://www.ist.tugraz.at/staff/aichholzer/research/rp/triangulations/ordertypes/data/otypes08.b08"
+if n==7: file_url = "http://www.ist.tugraz.at/staff/aichholzer/research/rp/triangulations/ordertypes/data/otypes07.b08"
 
 # downloading set points
 response = requests.get(file_url)
@@ -123,10 +128,11 @@ def is_caterpillar(G):
   return True
 
 
-caterpillars = [[3, 0, 0, 1], [2, 1, 0, 1], [2, 0, 1, 1], [2, 0, 0, 2], [1, 2, 0, 1], [1, 1, 1, 1], [2, 0, 0, 0, 1], [1, 1, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 0, 0, 1]]
+if n == 8: caterpillars = [[3, 0, 0, 1], [2, 1, 0, 1], [2, 0, 1, 1], [2, 0, 0, 2], [1, 2, 0, 1], [1, 1, 1, 1], [2, 0, 0, 0, 1], [1, 1, 0, 0, 1], [1, 0, 1, 0, 1], [1, 0, 0, 0, 0, 1]]
+if n == 7: caterpillars = [[2, 0, 0, 1], [1, 1, 0, 1], [1, 0, 0, 0, 1]]
 cp = caterpillars[caterpillar]
 sp = len(cp)
-pts = data[8*pointset:8*pointset+8]
+pts = data[n*pointset:n*pointset+n]
 pillar = seq_to_caterpillar(cp)
 
 print("caterpillar and point set made")
@@ -167,15 +173,15 @@ def dfs(G):
           if not two in visited: 
             stack.append(two)
   connected = False
-  plt.title("original")
-  nx.draw(pillar, nx.get_node_attributes(pillar, 'pos'), with_labels=True, node_size=15)
+  plt.title("counterexample")
+  nx.draw(pillar, nx.get_node_attributes(pillar, 'pos'), with_labels=False, node_size=15)
   plt.savefig(f'original{caterpillar}.png')
   plt.close()
   plt.title("got stuck")
-  nx.draw(H, nx.get_node_attributes(H, 'pos'), with_labels=True, node_size=15)
+  nx.draw(H, nx.get_node_attributes(H, 'pos'), with_labels=False, node_size=15)
   plt.savefig(f'stuck{caterpillar}{pointset}.png')
   plt.close()
-  return
+  return H
 
 for P in itertools.permutations(pts):
   pos = {}
@@ -184,7 +190,7 @@ for P in itertools.permutations(pts):
   nx.set_node_attributes(pillar, pos, "pos")
   visited = [list(pillar.edges)]
   spine_len = len(cp)
-  if check_planar(pillar): dfs(pillar)
+  if check_planar(pillar): H = dfs(pillar)
   if not connected:
     print("i got stuck here")
     break
