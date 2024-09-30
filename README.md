@@ -5,7 +5,7 @@ We have found an isolated caterpillar on 8 points.
 
 # Caterpillar Slides
 
-This code is related to the paper *Reconfigurations of Plane Caterpillars* and Paths by T. Antić, G. Gamboa Quintero and J. Glišić.
+This code is related to the paper *Reconfigurations of Plane Caterpillars and Paths* by T. Antić, G. Gamboa Quintero and J. Glišić.
 
 Abstract: Let $S$ be a point set in the plane, $\mathcal{P}(S)$ and $\mathcal{C}(S)$ sets of all plane spanning paths and caterpillars on $S$. We study reconfiguration operations on $\mathcal{P}(S)$ and $\mathcal{C}(S)$. In particular, we prove that all of the commonly studied reconfigurations on plane spanning trees still yield connected reconfiguration graphs for caterpillars when $S$ is in convex position. If $S$ is in general position, we show that the rotation, compatible flip and flip graphs of $\mathcal{C}(S)$ are connected while the slide graph is disconnected. 
 For paths, we prove the existence of a connected component of size at least $2^{n-1}$ and that no component of size at most $7$ can exist in the flip graph on $\mathcal{P}(S)$.
